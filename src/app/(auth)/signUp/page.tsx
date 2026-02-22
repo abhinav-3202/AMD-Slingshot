@@ -66,17 +66,20 @@ const page = () => {
     setIsSubmitting(true);
     console.log("form data", data);
     try {
-      const response = await axios.post('/api/signUp',data);
+      const response = await axios.post('/api/signUp',{
+        ...data,
+        authProvider: "credentials" // kyuki hum credentials ke through signup kar rahe hai, google ke through nhi kar rahe hai isliye authProvider me credentials pass karna hoga taki backend me pata chal sake ki user kis tarah se signup kar raha hai
+      });
       // response check karna padega ki hua bhi hai ya nhi 
-      console.log("response", response);
+      // console.log("response", response);
       toast.success(
         "Success", // sucess optionally check karna chahiye thaa ki success hai ya nahi response se
         {description: response.data.message},
       )
-      router.replace(`/verify/${username}`) // ek new page bana ke us page pe redirect karna hai jaha pe user apna email verify kar sake, url se username le lenge 
+      router.replace(`/verify/${data.username}`) // ek new page bana ke us page pe redirect karna hai jaha pe user apna email verify kar sake, url se username le lenge 
       setIsSubmitting(false);
     } catch (error) {
-      console.error("Error in signup of user" ,error);
+      console.error("Error in sig nup of user" ,error);
       const axiosError = error as AxiosError<ApiResponse>;
       let errorMessage = axiosError.response?.data.message
       toast.error(

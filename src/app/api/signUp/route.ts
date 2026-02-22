@@ -7,8 +7,8 @@
 
         try {
             await dbConnect();
-            const {username , email , password ,name , age , gender , height , weight , authProvider } = await request.json();
-            if (!name || !username || !email || !gender || !height || !weight || !age || !authProvider) {
+            const {username , email , password , authProvider } = await request.json();
+            if ( !username || !email || !authProvider) {
                 return Response.json(
                 { success: false, message: "All fields are required." },
                 { status: 400 }
@@ -20,30 +20,25 @@
                 }
             }
 
-            if (authProvider === "google") {
-                const existingUser = await UserModel.findOne({ email });
-                if (existingUser) {
-                    return Response.json({ success:true, message:"Login successful" },{status:200});
-                }
+            // if (authProvider === "google") {
+            //     const existingUser = await UserModel.findOne({ email });
+            //     if (existingUser) {
+            //         return Response.json({ success:true, message:"Login successful" },{status:200});
+            //     }
 
-                const existingUsername = await UserModel.findOne({ username });
-                    if (existingUsername) {
-                    return Response.json({ success:false, message:"Username already taken." },{status:400})
-                }
-                const newUser = new UserModel({
-                    username,
-                    email,
-                    name,
-                    age,
-                    gender,
-                    height,
-                    weight,
-                    isVerified: true,
-                    authProvider: "google"
-                });
-                await newUser.save();
-                return Response.json({ success:true, message:"Google signup successful" },{status:200});
-            }
+            //     const existingUsername = await UserModel.findOne({ username });
+            //         if (existingUsername) {
+            //         return Response.json({ success:false, message:"Username already taken." },{status:400})
+            //     }
+            //     const newUser = new UserModel({
+            //         username,
+            //         email,
+            //         isVerified: true,
+            //         authProvider: "google"
+            //     });
+            //     await newUser.save();
+            //     return Response.json({ success:true, message:"Google signup successful" },{status:200});
+            // }
 
 
             const existingUserByUsername = await UserModel.findOne({
@@ -85,12 +80,7 @@
                     existingUserByEmail.password = hashedPassword;
                     existingUserByEmail.verifyCode = verifyCode;
                     existingUserByEmail.verifyCodeExpiry = new Date(Date.now()+3600000);
-                    existingUserByEmail.name = name;
                     existingUserByEmail.username = username;
-                    existingUserByEmail.age = age;
-                    existingUserByEmail.gender = gender;
-                    existingUserByEmail.height = height;
-                    existingUserByEmail.weight = weight;
                     existingUserByEmail.authProvider = authProvider;
 
                     await existingUserByEmail.save();
@@ -106,11 +96,6 @@
                 const newUser = new UserModel({
                     username,
                     email,
-                    name,
-                    age,
-                    gender,
-                    height,
-                    weight,
                     password: hashedPassword,
                     verifyCode,
                     verifyCodeExpiry : expiryDate,

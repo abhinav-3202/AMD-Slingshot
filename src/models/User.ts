@@ -2,10 +2,6 @@ import { verify } from "crypto";
 import mongoose,{Schema} from "mongoose";
 
 const userSchema = new Schema({
-    name: {
-        type: String,
-        required: true,
-    },
     email: {
         type: String,
         required: true,
@@ -23,22 +19,6 @@ const userSchema = new Schema({
         required: function () {
         return this.authProvider === "credentials";
         },
-    },
-    gender:{
-        type: String,
-        required: true,
-    },
-    height:{
-        type: Number,
-        required: true,
-    },
-    weight:{
-        type: Number,
-        required: true, 
-    },
-    age:{
-        type: Number,
-        required: true,
     },
     isVerified:{
         type:Boolean,
