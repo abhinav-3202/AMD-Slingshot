@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import * as z from "zod";
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -8,12 +8,13 @@ import { useRouter } from 'next/navigation';
 import axios, { AxiosError } from 'axios';
 import { FormField,FormControl,Form , FormItem , FormMessage, FormLabel } from '@/components/ui/form';
 import { toast } from "sonner"
-import { ApiResponse } from '@/src/types/ApiResponse';
+// import { ApiResponse } from '@/src/types/ApiResponse';
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { signIn } from 'next-auth/react';
+import { useSearchParams } from 'next/navigation';
 // import { useRouter } from 'next/router';
 
 const page = () => {
@@ -21,6 +22,17 @@ const page = () => {
   const [isSubmitting ,setIsSubmitting] = useState(false) // state to indicate whether the form is currently being submitted
 
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(()=>{
+    const error = searchParams.get("error");
+    console.log("error from URL:", error);
+    if (error) {
+        setTimeout(() => {
+            toast.error(decodeURIComponent(error));
+        }, 100);  
+    }
+  },[searchParams]);
 
   const form = useForm<z.infer<typeof signInSchema>>({
     resolver:zodResolver(signInSchema),
@@ -38,6 +50,7 @@ const page = () => {
         redirect: false,
         identifier: data.identifier,
         password: data.password,
+        callbackUrl:"/dashboard"
         });
 
         if (result?.error) {
@@ -118,7 +131,9 @@ const page = () => {
             </p>
       </div>
       <div className="text-center mt-4">
-        <Button onClick={()=>signIn("google")}>
+        <Button onClick={()=>signIn("google" , {
+          callbackUrl:"/dashboard"
+        })}>
           Continue with Google
         </Button>
       </div>

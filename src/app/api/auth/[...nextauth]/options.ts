@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import dbConnect from "../../../../lib/dbConnect";
 import UserModel from "../../../../models/User";
 import GoogleProvider from 'next-auth/providers/google'
+
 // This file configures NextAuth.
 
 export const authOptions : NextAuthOptions = {
@@ -66,6 +67,17 @@ export const authOptions : NextAuthOptions = {
         })
     ],
     callbacks:{  // What data is stored 
+        async signIn({user,account}){
+            if(account?.provider === "google"){
+                await dbConnect();
+                const dbUser = await UserModel.findOne({email:user.email});
+
+                if(dbUser && dbUser.authProvider !== "google"){
+                    return `/signIn?error=This+email+is+already+registered+with+${dbUser.authProvider}.+Please+sign+in+via+that+method.`
+                }
+            }
+            return true;
+        },
         async jwt({ token, user }) { 
 
             if(user){
@@ -91,6 +103,10 @@ export const authOptions : NextAuthOptions = {
                         isVerified:true,
                         authProvider:"google",
                     })
+                }
+
+                else if(dbUser.authProvider !== "google"){
+                    throw new Error(`This email is already registered with ${dbUser.authProvider} .Please sign-in via that method.`)
                 }
             
                 token._id = dbUser._id?.toString()

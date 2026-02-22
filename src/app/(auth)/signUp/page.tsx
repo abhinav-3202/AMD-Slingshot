@@ -181,7 +181,9 @@ const page = () => {
         <div>
           <button
               type="button"
-              onClick={() => signIn("google")}
+              onClick={() => signIn("google",{
+                callbackUrl:'/dashboard'
+              })}
               className="w-full bg-red-500 text-white py-2 rounded mt-4"
             >
               Sign up with Google
