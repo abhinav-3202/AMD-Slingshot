@@ -85,7 +85,12 @@ const infopage = () => {
                                 <FormItem>
                                     <FormLabel>Age</FormLabel>
                                     <FormControl>
-                                        <Input {...field} type="number" placeholder="Enter your age" />
+                                        <Input
+                                            type="number"
+                                            placeholder="Enter your age"
+                                            value={field.value ?? ""}
+                                            onChange={(e) => field.onChange(e.target.value === "" ? undefined : Number(e.target.value))}  // 👈 manual conversion
+                                        />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -99,7 +104,12 @@ const infopage = () => {
                                 <FormItem>
                                     <FormLabel>Weight (kg)</FormLabel>
                                     <FormControl>
-                                        <Input {...field} type="number" placeholder="Enter your weight" />
+                                        <Input
+                                            type="number"
+                                            placeholder="Enter your weight"
+                                            value={field.value ?? ""}
+                                            onChange={(e) => field.onChange(e.target.value === "" ? undefined : Number(e.target.value))}  // 👈 manual conversion
+                                        />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
