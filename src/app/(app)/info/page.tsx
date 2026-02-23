@@ -1,6 +1,7 @@
 'use client';
-import { useState } from 'react';
+import { useState , useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { useSession } from 'next-auth/react';
 import * as z from "zod";
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
@@ -15,6 +16,7 @@ import { ApiResponse } from '@/src/types/ApiResponse';
 const infopage = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const router = useRouter();
+     const { data: session, status } = useSession();
 
     const form = useForm<z.infer<typeof infoSchema>>({
         resolver: zodResolver(infoSchema),
@@ -25,6 +27,15 @@ const infopage = () => {
             gender: "male" as const,
         }
     })
+    
+    useEffect(() => {
+        if (status === "unauthenticated") {
+            router.replace("/signIn");
+        }
+    }, [status]);
+
+    if (status === "loading") return <div>Loading...</div>  
+    if (!session) return null;
 
    const onSubmit = async (data: z.infer<typeof infoSchema>) => {
     setIsSubmitting(true);

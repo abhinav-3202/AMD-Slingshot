@@ -5,6 +5,7 @@ import { useSession , signOut } from 'next-auth/react'
 // where ever we see this use method , we cannot directly take data from it ,because it is a hook , we have to form a method like router we make from userouter kind of stuff....
 import { User } from 'next-auth'
 import { Button } from './button'
+import { usePathname } from 'next/navigation' 
 
 const NavBar = () => {
 
@@ -12,10 +13,12 @@ const NavBar = () => {
     // everything we injected in session (session,token) in option.ts file will be in User type of next-auth , so we can use it like session.user.username or session.user.email etc.
 
     const user:User = session?.user as User; // we are typecasting session.user to User type of next-auth
+    const pathname = usePathname();
+    if (pathname === "/") return null;
     return (
         <nav  className='p-4 md:p-6 shadow-md '>
             <div className='container mx-auto flex flex-col md:flex-row justify-between items-center'>
-                <a className='text-xl font-bold mb-4 md:mb-0' href="#">Mystry Message</a>
+                <a className='text-xl font-bold mb-4 md:mb-0' href="#">Med Assistant</a>
                 {
                     session ? (
                         <>

@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 
 export async function middleware(request: NextRequest) {
-  const token = await getToken({ req: request });
+  const token = await getToken({ 
+    req: request,
+    secret:process.env.NEXTAUTH_SECRET,
+  });
   const url = request.nextUrl;
 
   // Redirect authenticated users away from auth pages
@@ -16,10 +19,14 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  // Redirect unauthenticated users away from protected pages
-  if (!token && url.pathname.startsWith("/dashboard")) {
+  if (
+    !token &&
+    (url.pathname.startsWith("/dashboard") ||
+      url.pathname === "/info" ||
+      url.pathname === "/chatbot")  
+) {
     return NextResponse.redirect(new URL("/signIn", request.url));
-  }
+}
 
   return NextResponse.next();
 }
@@ -32,6 +39,7 @@ export const config = {
     "/",
     "/dashboard",
     "/dashboard/:path*",
-    "/info"
+    "/info",
+    "/chatbot"
   ],
 };

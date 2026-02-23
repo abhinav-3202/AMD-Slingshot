@@ -40,7 +40,7 @@ const userSchema = new Schema({
         type:Number,
     },
     gender:{
-        type:Number,
+        type:String,
     },
     authProvider:{
         type:String,
