@@ -103,10 +103,11 @@ export const authOptions : NextAuthOptions = {
                         isVerified:true,
                         authProvider:"google",
                     })
+                    token.isNewUser = true //
                 }
 
-                else if(dbUser.authProvider !== "google"){
-                    throw new Error(`This email is already registered with ${dbUser.authProvider} .Please sign-in via that method.`)
+                else {
+                    token.isNewUser = false  // existing user → go to /dashboard
                 }
             
                 token._id = dbUser._id?.toString()
@@ -122,6 +123,7 @@ export const authOptions : NextAuthOptions = {
                 session.user.isVerified = token.isVerified
                 // session.user.isAcceptingMessage = token.isAcceptingMessage
                 session.user.username = token.username
+                session.user.isNewUser = token.isNewUser
             }
             return session
         },

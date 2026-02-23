@@ -32,5 +32,6 @@ export const config = {
     "/",
     "/dashboard",
     "/dashboard/:path*",
+    "/info"
   ],
 };

@@ -30,6 +30,18 @@ const userSchema = new Schema({
     verifyCode:{
         type:String,
     },
+    name:{
+        type:String,
+    },
+    age:{
+        type:Number,
+    },
+    weight:{
+        type:Number,
+    },
+    gender:{
+        type:Number,
+    },
     authProvider:{
         type:String,
         enum:["credentials","google"],
