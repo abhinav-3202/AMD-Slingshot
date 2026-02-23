@@ -10,7 +10,7 @@ const page = () => {
     const router = useRouter();
 
     useEffect(() => {
-        if (status === "authenticated" && session?.user?.isNewUser) {
+        if (status === "authenticated" && session?.user?.isNewUser === true) {
             router.replace("/info");
         }
     }, [session, status]);
