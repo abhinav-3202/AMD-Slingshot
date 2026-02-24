@@ -16,7 +16,7 @@ import { ApiResponse } from '@/src/types/ApiResponse';
 const infopage = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const router = useRouter();
-     const { data: session, status } = useSession();
+     const { data: session, status ,update } = useSession();
 
     const form = useForm<z.infer<typeof infoSchema>>({
         resolver: zodResolver(infoSchema),
@@ -42,6 +42,7 @@ const infopage = () => {
     try {
         const response = await axios.post('/api/info', data);
         toast.success("Success", { description: response.data.message });
+        await update({ isNewUser: false });
         router.replace("/dashboard");
     } catch (error) {
         const axiosError = error as AxiosError<ApiResponse>;
