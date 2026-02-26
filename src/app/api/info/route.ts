@@ -17,13 +17,17 @@ export async function POST(request: Request) {
             }, { status: 401 })
         }
 
-        const { name, age, weight, gender } = await request.json();
+        const { name, age, weight, gender, role, specialization } = await request.json();
 
-        if (!name || !gender) {
+        if (!name || !gender || !role) {
             return Response.json({
                 success: false,
-                message: "Name and gender are required."
+                message: "Name, gender, and role are required."
             }, { status: 400 })
+        }
+
+        if (role === "doctor" && !specialization) {
+            return Response.json({ success: false, message: "Specialization is required for doctors." }, { status: 400 })
         }
 
         const user = await UserModel.findById(session.user._id);
@@ -40,12 +44,15 @@ export async function POST(request: Request) {
         user.age = age;
         user.weight = weight;
         user.gender = gender;
+        user.role = role;
+        user.specialization = specialization;
 
         await user.save();
 
         return Response.json({
             success: true,
-            message: "Information updated successfully."
+            message: "Information updated successfully.",
+            role: role
         }, { status: 200 })
 
     } catch (error) {

@@ -1,5 +1,5 @@
 'use client';
-import { useState , useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useSession } from 'next-auth/react';
 import * as z from "zod";
@@ -13,10 +13,11 @@ import { Loader2 } from 'lucide-react';
 import { infoSchema } from '@/src/schemas/infoSchema';
 import axios, { AxiosError } from 'axios';
 import { ApiResponse } from '@/src/types/ApiResponse';
+
 const infopage = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const router = useRouter();
-     const { data: session, status ,update } = useSession();
+    const { data: session, status, update } = useSession();
 
     const form = useForm<z.infer<typeof infoSchema>>({
         resolver: zodResolver(infoSchema),
@@ -25,32 +26,44 @@ const infopage = () => {
             age: undefined,
             weight: undefined,
             gender: "male" as const,
+            role: "user" as const,       //  add
+            specialization: "",          //  add
         }
     })
-    
+
+    const selectedRole = form.watch("role");  //  add this to watch role changes
+
     useEffect(() => {
         if (status === "unauthenticated") {
             router.replace("/signIn");
         }
     }, [status]);
 
-    if (status === "loading") return <div>Loading...</div>  
+    if (status === "loading") return <div>Loading...</div>
     if (!session) return null;
 
-   const onSubmit = async (data: z.infer<typeof infoSchema>) => {
-    setIsSubmitting(true);
-    try {
-        const response = await axios.post('/api/info', data);
-        toast.success("Success", { description: response.data.message });
-        await update({ isNewUser: false });
-        router.replace("/dashboard");
-    } catch (error) {
-        const axiosError = error as AxiosError<ApiResponse>;
-        toast.error("Failed", { description: axiosError.response?.data.message });
-    } finally {
-        setIsSubmitting(false);
+    const onSubmit = async (data: z.infer<typeof infoSchema>) => {
+        setIsSubmitting(true);
+        try {
+            const response = await axios.post('/api/info', data);
+            if (response.data.success) { 
+            toast.success("Success", { description: response.data.message });
+            await update({ isNewUser: false });
+            if (response.data.role === "doctor") {
+                router.replace("/doctor/dashboard");
+            } else {
+                router.replace("/dashboard");
+            }
+        } else {
+            toast.error("Failed", { description: response.data.message });
+        }
+        } catch (error) {
+            const axiosError = error as AxiosError<ApiResponse>;
+            toast.error("Failed", { description: axiosError.response?.data.message });
+        } finally {
+            setIsSubmitting(false);
+        }
     }
-}
 
     return (
         <div className="flex justify-center items-center min-h-screen bg-gray-100">
@@ -62,12 +75,9 @@ const infopage = () => {
                     <p className="mb-4">Fill in your details to get started</p>
                 </div>
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)}
-                     className="space-y-6">
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
 
-                        <FormField
-                            name="name"
-                            control={form.control}
+                        <FormField name="name" control={form.control}
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Name</FormLabel>
@@ -79,9 +89,7 @@ const infopage = () => {
                             )}
                         />
 
-                        <FormField
-                            name="age"
-                            control={form.control}
+                        <FormField name="age" control={form.control}
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Age</FormLabel>
@@ -90,7 +98,7 @@ const infopage = () => {
                                             type="number"
                                             placeholder="Enter your age"
                                             value={field.value ?? ""}
-                                            onChange={(e) => field.onChange(e.target.value === "" ? undefined : Number(e.target.value))}  // 👈 manual conversion
+                                            onChange={(e) => field.onChange(e.target.value === "" ? undefined : Number(e.target.value))}
                                         />
                                     </FormControl>
                                     <FormMessage />
@@ -98,9 +106,7 @@ const infopage = () => {
                             )}
                         />
 
-                        <FormField
-                            name="weight"
-                            control={form.control}
+                        <FormField name="weight" control={form.control}
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Weight (kg)</FormLabel>
@@ -109,7 +115,7 @@ const infopage = () => {
                                             type="number"
                                             placeholder="Enter your weight"
                                             value={field.value ?? ""}
-                                            onChange={(e) => field.onChange(e.target.value === "" ? undefined : Number(e.target.value))}  // 👈 manual conversion
+                                            onChange={(e) => field.onChange(e.target.value === "" ? undefined : Number(e.target.value))}
                                         />
                                     </FormControl>
                                     <FormMessage />
@@ -117,17 +123,12 @@ const infopage = () => {
                             )}
                         />
 
-                        <FormField
-                            name="gender"
-                            control={form.control}
+                        <FormField name="gender" control={form.control}
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Gender</FormLabel>
                                     <FormControl>
-                                        <select
-                                            {...field}
-                                            className="w-full border border-gray-300 rounded-md p-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
-                                        >
+                                        <select {...field} className="w-full border border-gray-300 rounded-md p-2 text-sm focus:outline-none focus:ring-2 focus:ring-black">
                                             <option value="male">Male</option>
                                             <option value="female">Female</option>
                                             <option value="others">Others</option>
@@ -138,11 +139,39 @@ const infopage = () => {
                             )}
                         />
 
+                        <FormField name="role" control={form.control}
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>I am a</FormLabel>
+                                    <FormControl>
+                                        <select {...field} className="w-full border border-gray-300 rounded-md p-2 text-sm focus:outline-none focus:ring-2 focus:ring-black">
+                                            <option value="user">Patient</option>
+                                            <option value="doctor">Doctor</option>
+                                        </select>
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        {/* show only if doctor selected */}
+                        {selectedRole === "doctor" && (
+                            <FormField name="specialization" control={form.control}
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Specialization</FormLabel>
+                                        <FormControl>
+                                            <Input {...field} placeholder="e.g. Cardiologist, Dentist" />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        )}
+
                         <Button type="submit" disabled={isSubmitting}>
                             {isSubmitting ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Please wait
-                                </>
+                                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Please wait</>
                             ) : ("Submit")}
                         </Button>
 

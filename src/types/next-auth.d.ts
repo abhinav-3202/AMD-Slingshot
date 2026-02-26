@@ -9,7 +9,8 @@ declare module 'next-auth'{   // want to ADD fields to the existing next-auth mo
         isVerified?:boolean;
         // isAcceptingMessage?:boolean;
         isNewUser?: boolean;
-        username?:string;   
+        username?:string;
+        role?: string;   
     }
     interface Session{
         user:{
@@ -17,6 +18,7 @@ declare module 'next-auth'{   // want to ADD fields to the existing next-auth mo
             isVerified?:boolean;
             isNewUser?: boolean;  
             username?:string;
+            role?: string;
         } & DefaultSession['user']
     }
 }
@@ -27,5 +29,6 @@ declare module 'next-auth/jwt'{
         isVerified?:boolean;
         isNewUser?: boolean;
         username?:string;
+        role?: string;
     }
 }

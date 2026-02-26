@@ -6,7 +6,7 @@ import { Separator } from '@/components/ui/separator';
 import { User } from 'next-auth';
 
 const page = () => {
-    const { data: session, status } = useSession();  // ✅ status added
+    const { data: session, status } = useSession();  
     const router = useRouter();
 
     useEffect(() => {

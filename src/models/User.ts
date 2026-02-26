@@ -42,6 +42,12 @@ const userSchema = new Schema({
     gender:{
         type:String,
     },
+    role: {
+        type: String,
+        enum: ["user", "doctor"],
+        default: "user"
+    },
+    specialization: { type: String },
     authProvider:{
         type:String,
         enum:["credentials","google"],

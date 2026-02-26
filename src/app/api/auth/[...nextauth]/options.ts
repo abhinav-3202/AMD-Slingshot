@@ -114,6 +114,7 @@ export const authOptions : NextAuthOptions = {
                 token.isVerified = dbUser.isVerified
                 // token.isAcceptingMessage = dbUser.isAcceptingMessage
                 token.username = dbUser.username
+                token.role = dbUser.role
             }
             return token;
         },
@@ -124,6 +125,7 @@ export const authOptions : NextAuthOptions = {
                 // session.user.isAcceptingMessage = token.isAcceptingMessage
                 session.user.username = token.username
                 session.user.isNewUser = token.isNewUser
+                session.user.role = token.role
             }
             return session
         },

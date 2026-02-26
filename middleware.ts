@@ -19,16 +19,30 @@ export async function middleware(request: NextRequest) {
       url.pathname.startsWith("/verify") ||
       url.pathname === "/")
   ) {
+    if (token.role === "doctor") {
+      return NextResponse.redirect(new URL("/doctor/dashboard", request.url));
+    }
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
   if (
     !token &&
     (url.pathname.startsWith("/dashboard") ||
+      url.pathname.startsWith("/doctor") ||
       url.pathname === "/info" ||
       url.pathname === "/chatbot")  
 ) {
     return NextResponse.redirect(new URL("/signIn", request.url));
+}
+
+// doctor trying to access user dashboard
+if (token && token.role === "doctor" && url.pathname.startsWith("/dashboard")) {
+    return NextResponse.redirect(new URL("/doctor/dashboard", request.url));
+}
+
+// user trying to access doctor dashboard
+if (token && token.role === "user" && url.pathname.startsWith("/doctor")) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
 }
 
   return NextResponse.next();
@@ -43,6 +57,8 @@ export const config = {
     "/dashboard",
     "/dashboard/:path*",
     "/info",
+    "/doctor",
+    "/doctor/:path*",
     "/chatbot"
   ],
 };
