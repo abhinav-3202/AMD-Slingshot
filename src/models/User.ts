@@ -1,6 +1,21 @@
 import { verify } from "crypto";
 import mongoose,{Schema} from "mongoose";
 
+const sessionSchema = new Schema({
+    sessionId: {
+        type: String,
+        required: true,
+    },
+    title: {
+        type: String,
+        default: "New Chat",
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now,
+    }
+})
+
 const userSchema = new Schema({
     email: {
         type: String,
@@ -47,7 +62,13 @@ const userSchema = new Schema({
         enum: ["user", "doctor"],
         default: "user"
     },
-    specialization: { type: String },
+    specialization: {
+        type: String
+    },
+    sessions: {
+        type: [sessionSchema],  
+        default: []
+    },
     authProvider:{
         type:String,
         enum:["credentials","google"],
