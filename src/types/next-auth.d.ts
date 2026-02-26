@@ -11,6 +11,7 @@ declare module 'next-auth'{   // want to ADD fields to the existing next-auth mo
         isNewUser?: boolean;
         username?:string;
         role?: string;   
+        specialization?: string;
     }
     interface Session{
         user:{
@@ -19,6 +20,7 @@ declare module 'next-auth'{   // want to ADD fields to the existing next-auth mo
             isNewUser?: boolean;  
             username?:string;
             role?: string;
+            specialization?: string;
         } & DefaultSession['user']
     }
 }
@@ -30,5 +32,6 @@ declare module 'next-auth/jwt'{
         isNewUser?: boolean;
         username?:string;
         role?: string;
+        specialization?: string;
     }
 }

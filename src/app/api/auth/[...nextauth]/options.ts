@@ -115,6 +115,7 @@ export const authOptions : NextAuthOptions = {
                 // token.isAcceptingMessage = dbUser.isAcceptingMessage
                 token.username = dbUser.username
                 token.role = dbUser.role
+                token.specialization = dbUser.specialization
             }
             return token;
         },
@@ -126,6 +127,7 @@ export const authOptions : NextAuthOptions = {
                 session.user.username = token.username
                 session.user.isNewUser = token.isNewUser
                 session.user.role = token.role
+                session.user.specialization = token.specialization
             }
             return session
         },
