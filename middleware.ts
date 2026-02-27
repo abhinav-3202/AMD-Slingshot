@@ -30,8 +30,16 @@ export async function middleware(request: NextRequest) {
     (url.pathname.startsWith("/dashboard") ||
       url.pathname.startsWith("/doctor") ||
       url.pathname === "/info" ||
-      url.pathname === "/chatbot")  
+      url.pathname === "/chatbot") ||
+      url.pathname.startsWith("/api/session") ||  
+      url.pathname.startsWith("/api/chat")
 ) {
+    if (url.pathname.startsWith("/api/")) {       
+      return Response.json({
+        success: false,
+        message: "Unauthorized. Please sign in first."
+      }, { status: 401 })
+    }
     return NextResponse.redirect(new URL("/signIn", request.url));
 }
 
@@ -59,6 +67,8 @@ export const config = {
     "/info",
     "/doctor",
     "/doctor/:path*",
-    "/chatbot"
+    "/chatbot",
+    "/api/session/:path*",   
+    "/api/chat",
   ],
 };
