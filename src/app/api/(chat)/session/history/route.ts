@@ -39,6 +39,8 @@ export async function GET(request: Request) {
         }
 
         const hfData = await hfResponse.json();
+        // const hfData = await hfResponse.json();
+console.log("HF history response:", JSON.stringify(hfData)); // 👈 add this
 
         return Response.json({
             success: true,

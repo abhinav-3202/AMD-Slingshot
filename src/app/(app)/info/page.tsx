@@ -52,7 +52,7 @@ const infopage = () => {
             if (response.data.role === "doctor") {
                 router.replace("/doctor/dashboard");
             } else {
-                router.replace("/dashboard");
+                router.replace("/Home");
             }
         } else {
             toast.error("Failed", { description: response.data.message });

@@ -22,7 +22,7 @@ export async function middleware(request: NextRequest) {
     if (token.role === "doctor") {
       return NextResponse.redirect(new URL("/doctor/dashboard", request.url));
     }
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    return NextResponse.redirect(new URL("/Home", request.url));
   }
 
   if (
@@ -32,7 +32,8 @@ export async function middleware(request: NextRequest) {
       url.pathname === "/info" ||
       url.pathname === "/chatbot") ||
       url.pathname.startsWith("/api/session") ||  
-      url.pathname.startsWith("/api/chat")
+      url.pathname.startsWith("/api/chat") ||
+      url.pathname === "/Home"
 ) {
     if (url.pathname.startsWith("/api/")) {       
       return Response.json({
@@ -70,5 +71,6 @@ export const config = {
     "/chatbot",
     "/api/session/:path*",   
     "/api/chat",
+    "Home",
   ],
 };
