@@ -78,8 +78,21 @@ export const authOptions : NextAuthOptions = {
             }
             return true;
         },
-        async jwt({ token, user }) { 
+        async jwt({ token, user , trigger, session }) { 
 
+              // handle update() call from frontend
+            if (trigger === "update") {
+                await dbConnect();
+                const dbUser = await UserModel.findById(token._id);
+                if (dbUser) {
+                    token.isNewUser = !dbUser.name  // re-read from DB only when called 
+                    token.role = dbUser.role
+                    token.specialization = dbUser.specialization
+                }
+                return token;
+            }   
+
+            // only runs on initial sign in
             if(user){
                 await dbConnect(); // this we are using because extra google login field
 
@@ -116,6 +129,10 @@ export const authOptions : NextAuthOptions = {
                 token.username = dbUser.username
                 token.role = dbUser.role
                 token.specialization = dbUser.specialization
+                token.isNewUser = !dbUser.name  //  if name is empty → isNewUser = true
+                                        // if name is filled (after info) → isNewUser = false
+                                        //// remove this line from info/page.tsx onSubmit
+                                        //await update({ isNewUser: false });  // ❌ no longer needed
             }
             return token;
         },

@@ -4,19 +4,17 @@ import { getToken } from "next-auth/jwt";
 export async function middleware(request: NextRequest) {
   const token = await getToken({ 
     req: request,
-    secret:process.env.NEXTAUTH_SECRET,
+    secret: process.env.NEXTAUTH_SECRET,
     cookieName: process.env.NODE_ENV === "production"
       ? "__Secure-next-auth.session-token"
       : "next-auth.session-token"
   });
   const url = request.nextUrl;
 
-  // Redirect authenticated users away from auth pages
   if (
     token &&
     (url.pathname === "/signIn" ||
       url.pathname === "/signUp" ||
-      url.pathname.startsWith("/verify") ||
       url.pathname === "/")
   ) {
     if (token.role === "doctor") {
@@ -26,33 +24,44 @@ export async function middleware(request: NextRequest) {
   }
 
   if (
+    token &&
+    token.isNewUser === true &&
+    url.pathname !== "/info"  // prevent infinite loop
+  ) {
+    return NextResponse.redirect(new URL("/info", request.url));
+  }
+
+  // redirect unauthenticated users away from protected pages and API routes
+  if (
     !token &&
-    (url.pathname.startsWith("/dashboard") ||
+    (
+      url.pathname.startsWith("/dashboard") ||
       url.pathname.startsWith("/doctor") ||
       url.pathname === "/info" ||
-      url.pathname === "/chatbot") ||
-      url.pathname.startsWith("/api/session") ||  
+      url.pathname === "/chatbot" ||
+      url.pathname.startsWith("/api/session") ||
       url.pathname.startsWith("/api/chat") ||
       url.pathname === "/Home"
-) {
-    if (url.pathname.startsWith("/api/")) {       
+    )
+  ) {
+    if (url.pathname.startsWith("/api/")) {
       return Response.json({
         success: false,
         message: "Unauthorized. Please sign in first."
       }, { status: 401 })
     }
     return NextResponse.redirect(new URL("/signIn", request.url));
-}
+  }
 
-// doctor trying to access user dashboard
-if (token && token.role === "doctor" && url.pathname.startsWith("/dashboard")) {
+  // doctor trying to access user dashboard
+  if (token && token.role === "doctor" && url.pathname.startsWith("/dashboard")) {
     return NextResponse.redirect(new URL("/doctor/dashboard", request.url));
-}
+  }
 
-// user trying to access doctor dashboard
-if (token && token.role === "user" && url.pathname.startsWith("/doctor")) {
+  // user trying to access doctor dashboard
+  if (token && token.role === "user" && url.pathname.startsWith("/doctor")) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
-}
+  }
 
   return NextResponse.next();
 }
@@ -61,7 +70,7 @@ export const config = {
   matcher: [
     "/signIn",
     "/signUp",
-    "/verify/:path*",
+    "/verify/:path*",  // still in matcher so middleware runs, but no redirect
     "/",
     "/dashboard",
     "/dashboard/:path*",
@@ -69,8 +78,8 @@ export const config = {
     "/doctor",
     "/doctor/:path*",
     "/chatbot",
-    "/api/session/:path*",   
+    "/api/session/:path*",
     "/api/chat",
-    "Home",
+    "/Home",
   ],
 };
