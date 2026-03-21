@@ -91,5 +91,8 @@ export const config = {
     "/Home",
     "/api/slots/:path*",
     "/api/appointments/:path*",
+    "appointment",
+    "api/doctors/:path*",
+    "api/notifications/:path*",
   ],
 };
