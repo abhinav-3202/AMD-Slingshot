@@ -74,7 +74,7 @@ export const authOptions : NextAuthOptions = {
 
                 if(dbUser && dbUser.authProvider !== "google"){
                     return `/signIn?error=This+email+is+already+registered+with+${dbUser.authProvider}.+Please+sign+in+via+that+method.`
-                }
+                } // singIn me jaa rha as a toast error ke foramte me 
             }
             return true;
         },
@@ -85,6 +85,7 @@ export const authOptions : NextAuthOptions = {
                 await dbConnect();
                 const dbUser = await UserModel.findById(token._id);
                 if (dbUser) {
+                    // console.log("UPDATE TRIGGER - dbUser.name:", dbUser.name, "dbUser.role:", dbUser.role)
                     token.isNewUser = !dbUser.name  // re-read from DB only when called 
                     token.role = dbUser.role
                     token.specialization = dbUser.specialization
@@ -99,6 +100,7 @@ export const authOptions : NextAuthOptions = {
                 let dbUser = await UserModel.findOne({email:user.email}) // this is for google login because google se login karne pe user create hota h but usme isVerified aur isAcceptingMessages field nahi h to wo error dega isliye dbUser me se ye fields nikal ke token me daal diye
 
                 if(!dbUser){
+                    // new Google user — create account
                     if (!user.email) {
                         throw new Error("Email is required for Google login");
                     }
@@ -116,12 +118,12 @@ export const authOptions : NextAuthOptions = {
                         isVerified:true,
                         authProvider:"google",
                     })
-                    token.isNewUser = true //
+                    // token.isNewUser = true //
                 }
-
-                else {
-                    token.isNewUser = false  // existing user → go to /dashboard
-                }
+                // console.log("SIGN IN - dbUser.name:", dbUser.name, "dbUser.role:", dbUser.role);
+                // else {
+                //     token.isNewUser = false  // existing user → go to /dashboard
+                // }
             
                 token._id = dbUser._id?.toString()
                 token.isVerified = dbUser.isVerified
@@ -133,6 +135,7 @@ export const authOptions : NextAuthOptions = {
                                         // if name is filled (after info) → isNewUser = false
                                         //// remove this line from info/page.tsx onSubmit
                                         //await update({ isNewUser: false });  // ❌ no longer needed
+                // console.log("TOKEN AFTER - role:", token.role, "isNewUser:", token.isNewUser)
             }
             return token;
         },
@@ -154,6 +157,9 @@ export const authOptions : NextAuthOptions = {
     },   //because we have written pages:{signIn:'/sign-in'} so we have to manually create form in signIn/page.tsx
     session:{
         strategy:"jwt"  
+    },
+    jwt:{
+        secret:process.env.NEXTAUTH_SECRET // we have added this here because the getToken in middleware sometimes can't get nextAuth secret key 
     },
     secret:process.env.NEXTAUTH_SECRET
 }
