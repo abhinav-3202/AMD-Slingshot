@@ -1,9 +1,10 @@
 import dbConnect from "@/src/lib/dbConnect";
-import UserModel from "@/src/models/User";
+// import UserModel from "@/src/models/User";
 import SlotModel from "@/src/models/Slot";
 import AppointmentModel from "@/src/models/Appointment";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../../auth/[...nextauth]/options";
+import NotificationModel from "@/src/models/Notification";
 
 export async function PUT(request:Request){
     try {
@@ -51,6 +52,13 @@ export async function PUT(request:Request){
         if(status === "cancelled"){
             await SlotModel.findByIdAndUpdate(appointment.slotId, 
                 {status:"available"});
+
+                 // notify patient about cancellation
+                await NotificationModel.create({
+                    userId: appointment.patientId,  // notify the patient
+                    text: `Your appointment has been cancelled by the doctor`,
+                    type: "cancel",
+                })
         }
 
         // iff not cancelled then update what the status is given 

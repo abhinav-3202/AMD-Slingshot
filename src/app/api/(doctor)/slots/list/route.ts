@@ -2,8 +2,6 @@ import dbConnect from "@/src/lib/dbConnect";
 import SlotModel from "@/src/models/Slot";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../../auth/[...nextauth]/options";
-import { success } from "zod";
-// import { success } from "zod";
 
 // we will get the doctorId from the URL , because the user and doctor can both fetch the
 // slots , so taking the ID from the session will be a problem  
@@ -54,7 +52,7 @@ export async function GET(request:Request){
             .sort({day:1,from:1})
 
             return Response.json({
-                success:false,
+                success:true,
                 slots,
                 message:"The available slots fetched successfully"
             },{status:200})

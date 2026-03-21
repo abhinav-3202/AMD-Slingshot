@@ -4,6 +4,8 @@ import AppointmentModel from "@/src/models/Appointment";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../../auth/[...nextauth]/options";
 import SlotModel from "@/src/models/Slot";
+import NotificationModel from "@/src/models/Notification";
+import { text } from "stream/consumers";
 
 export async function POST(request: Request){
     try {
@@ -64,7 +66,7 @@ export async function POST(request: Request){
             }, {status:400})
         }
 
-        const appointmetnt = new AppointmentModel({
+        const appointment = new AppointmentModel({
             patientId: session.user._id,
             doctorId,
             slotId,
@@ -74,7 +76,13 @@ export async function POST(request: Request){
             status:"pending",
         })
 
-        await appointmetnt.save();
+        await appointment.save();
+
+        await NotificationModel.create({
+            userId: doctorId,
+            text: `New appointment request from ${session.user.username} for ${date} at ${timeSlot}.`,
+            type: "appointment",
+        })
 
         await SlotModel.findByIdAndUpdate(slotId,{
             status:"booked"
@@ -83,7 +91,7 @@ export async function POST(request: Request){
         return Response.json({
             success:true,
             message:"Appointment booked successfully and is pending confirmation from the doctor.",
-            appointmetnt
+            appointment
         },
         {status:200})
     } catch (error) {
