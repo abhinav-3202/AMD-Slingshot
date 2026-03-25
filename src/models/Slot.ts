@@ -24,6 +24,10 @@ const slotSchema = new Schema({
         enum:["available","booked"],
         default:"available",
     },
+    // for which specific date dates are booked 
+    bookedDates:[{
+        type:Date,
+    }],
     createdAt:{
         type:Date,
         default:Date.now,

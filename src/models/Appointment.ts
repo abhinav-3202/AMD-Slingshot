@@ -37,7 +37,25 @@ const appointmentSchema = new Schema({
     createdAt:{
         type:Date,
         default:Date.now,
-    }
+    },
+    // Payment fields 
+    orderId:{
+        type:String,
+        default:null,
+    },
+    paymentId:{
+        type:String,
+        default:null,
+    },
+    paymentStatus:{
+        type:String,
+        enum:["pending","paid","failed","refunded"],
+        default:"pending",
+    },
+    amount:{
+        type:Number,
+        default:500,
+    },
 })
 
 const AppointmentModel = mongoose.models.Appointment || mongoose.model("Appointment", appointmentSchema);
