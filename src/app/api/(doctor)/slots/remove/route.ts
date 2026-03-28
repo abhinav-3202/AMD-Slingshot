@@ -47,13 +47,18 @@ export async function DELETE(request:Request){
             return Response.json({
                 success:false,
                 message:"You are not authorized to delete these slots."
-            })
+            },{status:403})
         }
 
-        if(slot.status === "booked"){
+        const today = new Date();
+        const hasUpcomingBookings = slot.bookedDates?.some(
+            (d:Date) =>new Date(d) >= today
+        )
+
+        if(hasUpcomingBookings){
             return Response.json({
                 success:false,
-                message:"Booked slots cannot be deleted."
+                message:"Slots with upcoming bookings cannot be deleted."
             },{status:400})
         }
 

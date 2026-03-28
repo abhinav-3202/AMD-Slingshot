@@ -5,6 +5,7 @@ import AppointmentModel from "@/src/models/Appointment";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../../auth/[...nextauth]/options";
 import NotificationModel from "@/src/models/Notification";
+import { stat } from "fs";
 
 export async function PUT(request:Request){
     try {
@@ -49,6 +50,13 @@ export async function PUT(request:Request){
             }, {status:404})
         }
 
+        if(appointment.doctorId.toString()!== session.user._id){
+            return Response.json({
+                success:false,
+                message:"You are not authorized to update the status of this appointment."
+            }, {status:403})
+        }
+
         if(status === "cancelled"){
             await SlotModel.findByIdAndUpdate(appointment.slotId, 
                 {status:"available"});
@@ -61,6 +69,22 @@ export async function PUT(request:Request){
                 })
         }
 
+        if(status === "confirmed"){
+            // notify patient about confirmation
+            await NotificationModel.create({
+                userId:appointment.patientId,
+                text: `Your appointment has been confirmed by the doctor.`,
+                type:"appointment",
+            })
+        }
+
+        if(status === "completed"){
+            await NotificationModel.create({
+                userId:appointment.patientId,
+                text: `Your appointment has been marked as completed by the doctor.`,
+                type:"appointment",
+            })
+        }
         // iff not cancelled then update what the status is given 
 
         const updatedAppointment = await AppointmentModel.findByIdAndUpdate(

@@ -20,6 +20,7 @@ export async function GET(request:Request){
 
         const {searchParams} = new URL(request.url)
         const doctorId = searchParams.get("doctorId");
+        const dateParam = searchParams.get("date"); // optional
         // mandatorly send the doctorID in the url 
 
         if(session.user.role === "doctor"){
@@ -50,6 +51,24 @@ export async function GET(request:Request){
                 status:"available", // because the patients can see only the available slots 
             })
             .sort({day:1,from:1})
+
+            // ── if date provided, filter out slots booked on that date ──
+            if (dateParam) {
+                const selectedDate = new Date(dateParam);
+                const availableSlots = slots.filter(slot => {
+                    // check if this specific date is in bookedDates
+                    const isBooked = slot.bookedDates?.some(
+                        (d: Date) => new Date(d).toDateString() === selectedDate.toDateString()
+                    );
+                    return !isBooked; // return slots NOT booked on this date
+                });
+
+                return Response.json({
+                    success: true,
+                    message: "Available slots fetched.",
+                    slots: availableSlots,
+                }, { status: 200 })
+            }
 
             return Response.json({
                 success:true,

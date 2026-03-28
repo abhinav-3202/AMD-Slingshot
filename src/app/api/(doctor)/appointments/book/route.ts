@@ -7,6 +7,8 @@ import SlotModel from "@/src/models/Slot";
 import NotificationModel from "@/src/models/Notification";
 import { text } from "stream/consumers";
 
+const CONSULTATION_FEE = 500;
+
 export async function POST(request: Request){
     try {
         await dbConnect();
@@ -27,9 +29,9 @@ export async function POST(request: Request){
             }, {status:403})
         }
 
-        const {doctorId , slotId, date, timeSlot, typeOfAppointment} = await request.json();
+        const {doctorId , slotId, date, timeSlot, typeOfAppointment,orderId} = await request.json();
 
-        if(!doctorId || !slotId || !date || !timeSlot || !typeOfAppointment){
+        if(!doctorId || !slotId || !date || !timeSlot || !typeOfAppointment || !orderId){
             return Response.json({
                 success:false,
                 message:"All fields are required."
@@ -59,10 +61,29 @@ export async function POST(request: Request){
             }, {status:400})
         }
 
-        if(slot.status !== "available"){
+        const appointmentDate = new Date(date);
+        const isDateBooked = slot.bookedDates?.some(
+            (d:Date)=>new Date(d).toDateString() === appointmentDate.toDateString()
+        );
+
+        if(isDateBooked){
             return Response.json({
                 success:false,
-                message:"Slot is not available."
+                message:"This slot is already booked for the selected date. Please choose another date or slot."
+            }, {status:400})
+        }
+
+        const existingAppointment = await AppointmentModel.findOne({
+            patentId: session.user._id,
+            doctorId,
+            date:appointmentDate,
+            status: {$nin: ["cancelled"]}
+        })
+
+        if(existingAppointment){
+            return Response.json({
+                success:false,
+                message:"You already have an appointment with this doctor on the selected date."
             }, {status:400})
         }
 
@@ -70,13 +91,20 @@ export async function POST(request: Request){
             patientId: session.user._id,
             doctorId,
             slotId,
-            date : new Date(date),
+            date : appointmentDate,
             timeSlot,
             typeOfAppointment,
             status:"pending",
+            orderId,
+            paymentStatus:"pending",
+            amount:CONSULTATION_FEE,
         })
 
         await appointment.save();
+
+        await SlotModel.findByIdAndUpdate(slotId,{
+            $push:{bookedDates: appointmentDate}
+        })
 
         await NotificationModel.create({
             userId: doctorId,
