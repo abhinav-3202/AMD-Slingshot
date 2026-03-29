@@ -94,5 +94,8 @@ export const config = {
     "/appointment",
     "/api/doctors/:path*",
     "/api/notifications/:path*",
+    "/api/payments/create-order",
+    "/api/payments/verify",
+    "/nearby"
   ],
 };
