@@ -44,17 +44,35 @@ const SignInContent = () => {
         redirect: false,
         identifier: data.identifier,
         password: data.password,
-        callbackUrl: "/Home"   
+        // callbackUrl: "/Home"  // directly setting this true was the error which was forcing without checking the cookies 
       });
 
+      //
       if (result?.error) {
         toast.error(result.error, { description: "Login Error" });
         return;
       }
 
       if (result?.ok) {
-        router.replace("/Home");  
+        // hard redirect — cookie is fully set before middleware runs
+        // middleware then reads token.role correctly
+        // doctor → redirected to /doctor/dashboard by middleware 
+        // patient → stays on /Home
+        // router.replace("/Home")  +++++ this hard redirect is not suitable 
+        window.location.href = "/Home";  
       }
+
+      /*router.replace("/Home")
+      → client side navigation (instant)
+      → cookie may not be fully saved yet
+      → middleware reads empty token → no role 
+
+      window.location.href = "/Home"
+      → full page reload
+      → browser waits, sends all cookies
+      → middleware reads token.role = "doctor" 
+      → redirects to /doctor/dashboard 
+      */
     } catch (error) {
       toast.error("Something went wrong");
     } finally {
