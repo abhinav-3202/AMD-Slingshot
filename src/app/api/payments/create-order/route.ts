@@ -5,7 +5,7 @@ import { authOptions } from "../../auth/[...nextauth]/options";
 import UserModel from "@/src/models/User";
 import { success } from "zod";
 
-const CONSULTATION_FEE = 500;
+const CONSULTATION_FEE = 1;
 
 const razorpay = new Razorpay({
     key_id: process.env.RAZORPAY_KEY_ID!,

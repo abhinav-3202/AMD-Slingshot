@@ -7,7 +7,7 @@ import SlotModel from "@/src/models/Slot";
 import NotificationModel from "@/src/models/Notification";
 import { text } from "stream/consumers";
 
-const CONSULTATION_FEE = 500;
+const CONSULTATION_FEE = 1;
 
 export async function POST(request: Request){
     try {

@@ -24,7 +24,7 @@ interface Slot {
 }
 
 // constant consultation fee
-const CONSULTATION_FEE = 500;
+const CONSULTATION_FEE = 1;
 
 const AppointmentPage = () => {
     const { data: session, status } = useSession();
