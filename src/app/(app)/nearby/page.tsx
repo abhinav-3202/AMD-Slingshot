@@ -42,26 +42,158 @@ const NearbyContent = () => {
 
     const mapRef = useRef<google.maps.Map | null>(null);
 
+    // ✅ FIX 1: Keep a ref of userLocation so handleSearch never captures a stale closure
+    const userLocationRef = useRef<UserLocation | null>(null);
+
     const { isLoaded, loadError } = useJsApiLoader({
         googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
         libraries,
     });
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // ✅ FIX 2: ALL functions defined BEFORE early returns so useEffects below
+    //           never hit a ReferenceError (temporal dead zone).
+    // ─────────────────────────────────────────────────────────────────────────
+
+    // ── GET USER LOCATION ──
+    const getUserLocation = useCallback(() => {
+        if (!navigator.geolocation) {
+            setLocationError("Geolocation is not supported by your browser.");
+            return;
+        }
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const location = {
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude,
+                };
+                userLocationRef.current = location;   // ✅ keep ref in sync
+                setUserLocation(location);
+                setMapCenter(location);
+                setLocationError("");
+            },
+            (error) => {
+                setLocationError("Could not get your location. Please allow location access.");
+                console.error("Location error:", error);
+            }
+        );
+    }, []);
+
+    // ── SEARCH NEARBY PLACES ──
+    // ✅ FIX 3: Accept optional queryOverride so quick-search buttons can pass
+    //           the new value directly — avoids the stale-closure setTimeout hack.
+    const handleSearch = useCallback((queryOverride?: string) => {
+        const query = (queryOverride ?? searchQuery).trim();
+
+        if (!query) return;
+
+        const loc = userLocationRef.current;
+        if (!loc) {
+            setLocationError("Please allow location access to search nearby.");
+            return;
+        }
+        if (!mapRef.current) return;
+
+        setIsSearching(true);
+        setPlaces([]);
+        setSelectedPlace(null);
+        setDirections(null);
+
+        const service = new google.maps.places.PlacesService(mapRef.current);
+
+        const request: google.maps.places.PlaceSearchRequest = {
+            location: new google.maps.LatLng(loc.lat, loc.lng),   // ✅ reads ref, never stale
+            radius: 5000,
+            keyword: query,
+        };
+
+        service.nearbySearch(request, (results, serviceStatus) => {
+            setIsSearching(false);
+            if (serviceStatus === google.maps.places.PlacesServiceStatus.OK && results) {
+                // filter only places that have geometry/location
+                const validResults = results.filter(
+                    place => place.geometry?.location
+                );
+                setPlaces(validResults);
+
+                // fit map bounds to show all results
+                if (validResults.length > 0) {
+                    const bounds = new google.maps.LatLngBounds();
+                    validResults.forEach(place => {
+                        if (place.geometry?.location) {
+                            bounds.extend(place.geometry.location);
+                        }
+                    });
+                    mapRef.current?.fitBounds(bounds);
+                }
+            } else {
+                setPlaces([]);
+            }
+        });
+    }, [searchQuery]);   // searchQuery in deps — used for manual search bar hits
+
+    // ── GET DIRECTIONS ──
+    const handleGetDirections = useCallback((place: google.maps.places.PlaceResult) => {
+        const loc = userLocationRef.current;    // ✅ always fresh via ref
+        if (!loc || !place.geometry?.location) return;
+
+        const directionsService = new google.maps.DirectionsService();
+
+        directionsService.route({
+            origin: new google.maps.LatLng(loc.lat, loc.lng),
+            destination: place.geometry.location,
+            travelMode: google.maps.TravelMode.DRIVING,
+        }, (result, dirStatus) => {
+            if (dirStatus === google.maps.DirectionsStatus.OK && result) {
+                setDirections(result);
+                setSelectedPlace(place);
+                setMapCenter({
+                    lat: place.geometry!.location!.lat(),
+                    lng: place.geometry!.location!.lng()
+                });
+            }
+        });
+    }, []);   // no deps needed — reads ref
+
+    // ── CLEAR DIRECTIONS ──
+    const handleClearDirections = useCallback(() => {
+        setDirections(null);
+        setSelectedPlace(null);
+        const loc = userLocationRef.current;
+        if (loc) setMapCenter(loc);
+    }, []);
+
+    // ── MAP LOAD CALLBACK ──
+    // ✅ FIX 4: useCallback is a hook — must be called before any early return
+    const onMapLoad = useCallback((map: google.maps.Map) => {
+        mapRef.current = map;
+    }, []);
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // ✅ FIX 5: ALL useEffects before early returns (Rules of Hooks)
+    // ─────────────────────────────────────────────────────────────────────────
+
     useEffect(() => {
         if (status === "unauthenticated") router.replace("/signIn");
-    }, [status]);
+    }, [status, router]);
 
     useEffect(() => {
         if (status === "authenticated") {
             getUserLocation();
         }
-    }, [status]);
+    }, [status, getUserLocation]);
 
+    // Auto-search when location + map both become ready (e.g. navigated from Home with ?q=)
     useEffect(() => {
         if (userLocation && searchQuery && isLoaded) {
             handleSearch();
         }
-    }, [userLocation, isLoaded]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [userLocation, isLoaded]);   // intentionally fire only on these two changes
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Early returns — safe now because ALL hooks are above
+    // ─────────────────────────────────────────────────────────────────────────
 
     if (status === "loading" || !isLoaded) return (
         <div className="flex flex-col justify-center items-center min-h-screen gap-3"
@@ -80,109 +212,6 @@ const NearbyContent = () => {
     )
 
     if (!session) return null;
-
-    // ── GET USER LOCATION ──
-    const getUserLocation = () => {
-        if (!navigator.geolocation) {
-            setLocationError("Geolocation is not supported by your browser.");
-            return;
-        }
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const location = {
-                    lat: position.coords.latitude,
-                    lng: position.coords.longitude,
-                };
-                setUserLocation(location);
-                setMapCenter(location);
-            },
-            (error) => {
-                setLocationError("Could not get your location. Please allow location access.");
-                console.error("Location error:", error);
-            }
-        );
-    }
-
-    // ── SEARCH NEARBY PLACES ──
-    const handleSearch = () => {
-        if (!searchQuery.trim()) return;
-        if (!userLocation) {
-            setLocationError("Please allow location access to search nearby.");
-            return;
-        }
-        if (!mapRef.current) return;
-
-        setIsSearching(true);
-        setPlaces([]);
-        setSelectedPlace(null);
-        setDirections(null);
-
-        const service = new google.maps.places.PlacesService(mapRef.current);
-
-        const request: google.maps.places.PlaceSearchRequest = {
-            location: new google.maps.LatLng(userLocation.lat, userLocation.lng),
-            radius: 5000,
-            keyword: searchQuery,
-        };
-
-        service.nearbySearch(request, (results, serviceStatus) => {
-            setIsSearching(false);
-            if (serviceStatus === google.maps.places.PlacesServiceStatus.OK && results) {
-                // filter only places that have geometry/location
-                const validResults = results.filter(
-                    place => place.geometry?.location
-                );
-                setPlaces(validResults);  // ✅ no custom interface needed
-
-                // fit map bounds to show all results
-                if (validResults.length > 0) {
-                    const bounds = new google.maps.LatLngBounds();
-                    validResults.forEach(place => {
-                        if (place.geometry?.location) {
-                            bounds.extend(place.geometry.location);
-                        }
-                    });
-                    mapRef.current?.fitBounds(bounds);
-                }
-            } else {
-                setPlaces([]);
-            }
-        });
-    }  // ✅ handleSearch ends here
-
-    // ── GET DIRECTIONS ── defined OUTSIDE handleSearch ✅
-    const handleGetDirections = (place: google.maps.places.PlaceResult) => {
-        if (!userLocation || !place.geometry?.location) return;
-
-        const directionsService = new google.maps.DirectionsService();
-
-        directionsService.route({
-            origin: new google.maps.LatLng(userLocation.lat, userLocation.lng),
-            destination: place.geometry.location,  // LatLng object directly
-            travelMode: google.maps.TravelMode.DRIVING,
-        }, (result, dirStatus) => {
-            if (dirStatus === google.maps.DirectionsStatus.OK && result) {
-                setDirections(result);
-                setSelectedPlace(place);
-                setMapCenter({
-                    lat: place.geometry!.location!.lat(),
-                    lng: place.geometry!.location!.lng()
-                });
-            }
-        });
-    }
-
-    // ── CLEAR DIRECTIONS ── defined OUTSIDE handleSearch ✅
-    const handleClearDirections = () => {
-        setDirections(null);
-        setSelectedPlace(null);
-        if (userLocation) setMapCenter(userLocation);
-    }
-
-    // ── MAP LOAD CALLBACK ──
-    const onMapLoad = useCallback((map: google.maps.Map) => {
-        mapRef.current = map;
-    }, []);
 
     const quickSearches = ["Hospital", "Pharmacy", "Doctor", "Clinic", "Dentist", "Cardiologist"];
 
@@ -232,7 +261,7 @@ const NearbyContent = () => {
                             }}
                         />
                         <button
-                            onClick={handleSearch}
+                            onClick={() => handleSearch()}
                             disabled={isSearching || !searchQuery.trim()}
                             style={{
                                 background: isSearching ? "#c9ebe4" : "linear-gradient(135deg, #0d9488, #06b6d4)",
@@ -270,8 +299,10 @@ const NearbyContent = () => {
                             <button
                                 key={q}
                                 onClick={() => {
+                                    // ✅ FIX 6: Set state AND pass value directly to handleSearch.
+                                    //    No more setTimeout — no more stale closure.
                                     setSearchQuery(q);
-                                    setTimeout(() => handleSearch(), 100);
+                                    handleSearch(q);
                                 }}
                                 style={{
                                     background: searchQuery === q ? "#ccfbf1" : "#f0faf8",
@@ -380,7 +411,7 @@ const NearbyContent = () => {
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                handleGetDirections(place);  // ✅ now accessible
+                                                handleGetDirections(place);
                                             }}
                                             style={{
                                                 background: "linear-gradient(135deg, #0d9488, #06b6d4)",
