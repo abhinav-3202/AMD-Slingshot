@@ -1,7 +1,7 @@
 'use client'
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'use-react';
+import { useEffect, useState } from 'react';
 import axios, { AxiosError } from 'axios';
 import { toast } from 'sonner';
 import { ApiResponse } from '@/src/types/ApiResponse';
