@@ -142,7 +142,7 @@ const AppointmentPage = () => {
         setIsBooking(true);
         try {
             // step 1 — create Razorpay order
-            const orderResponse = await axios.post('/api/payment/create-order', {
+            const orderResponse = await axios.post('/api/payments/create-order', {
                 doctorId: selectedDoctor._id,
             });
 
@@ -175,7 +175,7 @@ const AppointmentPage = () => {
 
             // step 3 — open Razorpay payment modal
             const options = {
-                key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+                key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
                 amount,
                 currency,
                 name: "MedAssist",
@@ -186,7 +186,7 @@ const AppointmentPage = () => {
                 handler: async (response: any) => {
                     try {
                         // verify payment signature on backend
-                        const verifyResponse = await axios.post('/api/payment/verify', {
+                        const verifyResponse = await axios.post('/api/payments/verify', {
                             razorpay_order_id: response.razorpay_order_id,
                             razorpay_payment_id: response.razorpay_payment_id,
                             razorpay_signature: response.razorpay_signature,
