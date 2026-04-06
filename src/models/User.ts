@@ -1,4 +1,5 @@
 import mongoose,{Schema} from "mongoose";
+import { de } from "zod/v4/locales";
 
 const sessionSchema = new Schema({
     sessionId: {
@@ -12,6 +13,10 @@ const sessionSchema = new Schema({
     createdAt: {
         type: Date,
         default: Date.now,
+    },
+    messagesSent: {          
+        type: Number,
+        default: 0,
     }
 })
 
@@ -55,6 +60,8 @@ const userSchema = new Schema({
     },
     gender:{
         type:String,
+        enum:["male", "female", "other"],
+        default:"male",
     },
     role: {
         type: String,
