@@ -225,6 +225,10 @@ const AppointmentPage = () => {
                                 appointmentId,
                                 status: "cancelled"
                             });
+
+                            await axios.put('/api/appointments/cancel-by-patient', {
+                                appointmentId,
+                            });
                         } catch (error) {
                             console.error("Failed to cancel appointment on dismiss");
                         }

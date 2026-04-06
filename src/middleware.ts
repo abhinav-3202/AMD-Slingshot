@@ -96,6 +96,8 @@ export const config = {
     "/api/notifications/:path*",
     "/api/payments/create-order",
     "/api/payments/verify",
-    "/nearby"
+    "/nearby",
+    "/appointments",                              // new page
+    "/api/appointments/cancel-by-patient",        // new API
   ],
 };
