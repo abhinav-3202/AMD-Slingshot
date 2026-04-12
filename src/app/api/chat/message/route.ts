@@ -43,6 +43,8 @@ export async function POST(request: Request) {
         );
         const isFirstEverMessage = totalMessagesSent === 0;
 
+        // console.log(isFirstMessage, isFirstEverMessage);
+
         const userId = session.user._id!.toString();
         const hfHeaders = {
             "Content-Type": "application/json",
@@ -52,20 +54,17 @@ export async function POST(request: Request) {
         let hfResponse;
 
         if (isFirstMessage) {
-            hfResponse = await fetch(`${process.env.HF_ENDPOINT}/chat/start`, {
-                method: "POST",
-                headers: hfHeaders,
-                body: JSON.stringify({
-                    message,
-                    // 🔧 FIX 3: Use isFirstEverMessage to send profile only once
-                    // 🔧 FIX (gender): gender has default "male" in schema, so send null
-                    //    explicitly if not set (i.e. if it equals the default unexpectedly)
-                    patient_name: isFirstEverMessage ? (user.name ?? null) : null,
-                    age: isFirstEverMessage ? (user.age ?? null) : null,
-                    sex: isFirstEverMessage ? (user.gender ?? null) : null,
-                    weight: isFirstEverMessage ? (user.weight ?? null) : null,
-                }),
-            });
+        hfResponse = await fetch(`${process.env.HF_ENDPOINT}/chat/start`, {
+            method: "POST",
+            headers: hfHeaders,
+            body: JSON.stringify({
+                message,
+                patient_name: isFirstEverMessage ? (user.name ?? null) : null,
+                age: isFirstEverMessage ? (user.age != null ? String(user.age) : null) : null,       // ✅ number → string
+                sex: isFirstEverMessage ? (user.gender ?? null) : null,
+                weight: isFirstEverMessage ? (user.weight != null ? String(user.weight) : null) : null, // ✅ number → string
+            }),
+        });
         } else {
             hfResponse = await fetch(`${process.env.HF_ENDPOINT}/chat/continue`, {
                 method: "POST",
@@ -76,6 +75,9 @@ export async function POST(request: Request) {
                 }),
             });
         }
+
+        // console.log("HF response status:", hfResponse.status);
+        // console.log("HF response ", hfResponse);
 
         if (!hfResponse.ok) {
             const errorText = await hfResponse.text();
@@ -105,7 +107,7 @@ export async function POST(request: Request) {
         }, { status: 200 });
 
     } catch (error) {
-        console.error("Error sending message:", error);
-        return Response.json({ success: false, message: "Internal server error." }, { status: 500 });
+        // console.error("Error sending message:", error);
+        return Response.json({ success: false, message: "Internal server error in getting response ." }, { status: 500 });
     }
 }

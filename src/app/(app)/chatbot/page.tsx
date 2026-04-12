@@ -201,6 +201,9 @@ const ChatbotPage = () => {
                 };
                 setMessages(prev => [...prev, botMessage]);
                 setChatStatus(response.data.status === "complete" ? "complete" : "questioning");
+                if (response.data.sessionId) {
+                    setActiveSessionId(response.data.sessionId);
+                }
             } else {
                 toast.error(response.data.message);
                 // Remove optimistic user message on failure
