@@ -21,7 +21,7 @@ export async function DELETE(request: Request) {
 
         // Try to delete from HF — if endpoint not ready yet, we skip silently
         try {
-            await fetch(`${process.env.HF_ENDPOINT}/chat/session/${sessionId}`, {
+            await fetch(`${process.env.HF_ENDPOINT}/chat/delete/${sessionId}`, {
                 method: "DELETE",
                 headers: { "x-user-id": userId },
             });

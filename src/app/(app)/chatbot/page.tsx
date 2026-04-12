@@ -151,7 +151,7 @@ const ChatbotPage = () => {
         setIsDeletingSession(sessionId);
 
         try {
-            const response = await axios.delete<ApiResponse>(`/api/chat/session?sessionId=${sessionId}`);
+            const response = await axios.delete<ApiResponse>(`/api/chat/delete?sessionId=${sessionId}`);
             if (response.data.success) {
                 toast.success("Chat deleted.");
                 if (sessionId === activeSessionId) {
