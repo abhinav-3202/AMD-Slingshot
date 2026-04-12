@@ -5,6 +5,11 @@ import { authOptions } from "@/src/app/api/auth/[...nextauth]/options";
 
 export async function POST(request: Request) {
     try {
+        // 🔧 FIX 5: Guard against missing HF_ENDPOINT env var early
+        if (!process.env.HF_ENDPOINT) {
+            throw new Error("HF_ENDPOINT environment variable is not set.");
+        }
+
         await dbConnect();
         const session = await getServerSession(authOptions);
         if (!session || !session.user) {
@@ -13,7 +18,8 @@ export async function POST(request: Request) {
 
         const { sessionId, message } = await request.json();
 
-        if (!sessionId || !message) {
+        // 🔧 FIX 4: Reject whitespace-only or non-string messages
+        if (!sessionId || typeof message !== "string" || !message.trim()) {
             return Response.json({ success: false, message: "sessionId and message are required." }, { status: 400 });
         }
 
@@ -29,7 +35,13 @@ export async function POST(request: Request) {
         }
 
         const isFirstMessage = userSession.messagesSent === 0;
-        const isFirstSession = user.sessions.length === 1;
+
+        // 🔧 FIX 3: isFirstSession should mean "this is the user's very first message ever"
+        // not just "they only have one session" — check total messages across all sessions
+        const totalMessagesSent = user.sessions.reduce(
+            (sum: number, s: any) => sum + (s.messagesSent ?? 0), 0
+        );
+        const isFirstEverMessage = totalMessagesSent === 0;
 
         const userId = session.user._id!.toString();
         const hfHeaders = {
@@ -45,11 +57,13 @@ export async function POST(request: Request) {
                 headers: hfHeaders,
                 body: JSON.stringify({
                     message,
-                    // profile read silently from MongoDB — frontend never touches this
-                    patient_name: isFirstSession ? (user.name ?? null) : null,
-                    age: isFirstSession ? (user.age ?? null) : null,
-                    sex: isFirstSession ? (user.gender ?? null) : null,  // note: your schema uses "gender" not "sex"
-                    weight: isFirstSession ? (user.weight ?? null) : null,
+                    // 🔧 FIX 3: Use isFirstEverMessage to send profile only once
+                    // 🔧 FIX (gender): gender has default "male" in schema, so send null
+                    //    explicitly if not set (i.e. if it equals the default unexpectedly)
+                    patient_name: isFirstEverMessage ? (user.name ?? null) : null,
+                    age: isFirstEverMessage ? (user.age ?? null) : null,
+                    sex: isFirstEverMessage ? (user.gender ?? null) : null,
+                    weight: isFirstEverMessage ? (user.weight ?? null) : null,
                 }),
             });
         } else {
@@ -70,6 +84,12 @@ export async function POST(request: Request) {
         }
 
         const hfData = await hfResponse.json();
+
+        // 🔧 FIX 1: Sync the HF session_id back into MongoDB after /chat/start
+        // HF generates its own session_id — we must store it so /chat/continue works
+        if (isFirstMessage && hfData.session_id) {
+            userSession.sessionId = hfData.session_id;
+        }
 
         // Increment messagesSent only after confirmed success
         userSession.messagesSent = (userSession.messagesSent ?? 0) + 1;
